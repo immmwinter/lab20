@@ -55,6 +55,7 @@ Unit::Unit(string t,string n){
 	hp = hpmax;	
 	guard_on = false;
 	equipment = NULL;
+	dodge_on = false;
 }
 
 void Unit::showStatus(){
@@ -74,24 +75,37 @@ void Unit::showStatus(){
 
 void Unit::newTurn(){
 	guard_on = false; 
+	dodge_on = false;
 }
 
 int Unit::beAttacked(int oppatk){
-	int dmg;
-	if(oppatk > def){
-		dmg = oppatk-def;	
-		if(guard_on) dmg = dmg/3;
-	}	
-	hp -= dmg;
-	if(hp <= 0){hp = 0;}
-	
-	return dmg;	
+    int dmg = 0;  
+
+    if (dodge_on) {  
+        if (rand() % 2 == 0) {  
+            return 0;  
+        } else {  
+            dmg = (oppatk > def) ? 2 * (oppatk - def) : 0;  
+        }
+    } else {  
+        dmg = (oppatk > def) ? (oppatk - def) : 0;
+        if (guard_on) dmg = dmg / 3; 
+    }
+
+    hp -= dmg;
+    if(hp <= 0) hp = 0;
+    
+    return dmg;  
 }
+
+
 
 int Unit::attack(Unit &opp){
 	return opp.beAttacked(atk);
 }
-
+int Unit::ultimateAttack(Unit &opp){
+	return opp.beAttacked(2*atk);
+}
 int Unit::heal(){
 	int h = rand()%21 + 10;
 	if(hp + h > hpmax) h = hpmax - hp;
@@ -168,3 +182,47 @@ void playerLose(){
 	cout << "*******************************************************\n";
 };
 
+void Unit::dodge(){
+    dodge_on = true;
+}
+
+Equipment::Equipment(int hpequi, int atkequi, int defequi) {
+    hpmax = hpequi;
+    atk = atkequi;
+    def = defequi;
+}
+
+vector<int> Equipment::getStat() {
+    vector<int> getstats;
+    getstats.push_back(hpmax);
+    getstats.push_back(atk);
+    getstats.push_back(def);
+    return getstats;
+}
+
+void Unit::equip(Equipment *new_equipment) {
+    if (equipment == NULL) {
+        vector<int> stats = new_equipment->getStat();
+        hpmax += stats[0];
+        atk += stats[1];
+        def += stats[2];
+    } else {
+        vector<int> old_stats = equipment->getStat();
+        hpmax -= old_stats[0];
+        atk -= old_stats[1];
+        def -= old_stats[2];
+        
+        vector<int> new_stats = new_equipment->getStat();
+        hpmax += new_stats[0];
+        atk += new_stats[1];
+        def += new_stats[2];
+    }
+    
+    
+    if (hp > hpmax) {
+        hp = hpmax;
+    }
+    
+    
+    equipment = new_equipment;
+}
